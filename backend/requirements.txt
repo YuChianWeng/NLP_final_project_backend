@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+python-dotenv
+pytest
+requests
+azure-ai-textanalytics
+azure-ai-translation-text
+azure-cognitiveservices-speech
+azure-identity

@@ -1,9 +1,16 @@
 from fastapi import FastAPI
 
+from app.api.route import router
+
 app = FastAPI(
     title="電影評論情緒分析與語音敘述後端服務",
     description="NLP Final Project Backend Service",
     version="1.0.0"
+)
+
+app.include_router(
+    router,
+    prefix="/api/v1"
 )
 
 @app.get("/health", tags=["Health"])

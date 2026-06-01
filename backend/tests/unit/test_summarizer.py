@@ -17,8 +17,8 @@ def test_summarize_success_pipeline(mock_client_class):
     mock_doc.is_error = False
     mock_doc.summaries = [mock_summary]
     
-    # 模擬動作層
-    mock_action_result = MagicMock()
+    # 模擬動作層（spec 限制屬性，避免 hasattr 對 summaries 誤判）
+    mock_action_result = MagicMock(spec=["is_error", "documents"])
     mock_action_result.is_error = False
     mock_action_result.documents = [mock_doc]
     

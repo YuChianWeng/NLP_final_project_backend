@@ -127,9 +127,11 @@ def build_movie_insight(
     # Step6: 摘要生成
     # --------------------------------------------------
 
-    raw_summary = summarize(
-        review_texts
-    )
+    try:
+        raw_summary = summarize(review_texts)
+    except RuntimeError:
+        raw_summary = "摘要服務暫時無法使用。"
+        warnings.append("summarization_failed")
 
     # --------------------------------------------------
     # Step7: GPT 潤飾

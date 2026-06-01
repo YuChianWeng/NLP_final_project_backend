@@ -9,3 +9,4 @@ azure-ai-textanalytics
 azure-ai-translation-text
 azure-cognitiveservices-speech
 azure-identity
+openai

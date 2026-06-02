@@ -1,50 +1,46 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from azure.ai.textanalytics import TextAnalyticsClient  # 引入微軟官方類別
 from app.services.summarizer import summarize
 
-@patch('app.services.summarizer.TextAnalyticsClient')
-def test_summarize_success_pipeline(mock_client_class):
-    """測試 Azure 抽象式摘要的多層複雜結構是否能順利提取文字"""
-    mock_client = MagicMock()
+def test_summarize_success_pipeline(monkeypatch):
+    """精準 Mock 萃取式摘要 begin_extract_summary，徹底破除 main 宇宙集體執行的快取污染"""
+    # 1. 建立真實被調用的 Poller 物件
     mock_poller = MagicMock()
     
-    # 模擬最內層的摘要文字物件
-    mock_summary = MagicMock()
-    mock_summary.text = "這是一部充滿哲學思維的科幻神作。"
+    # 2. 建立萃取式摘要最內層的句子文字 Mock (必須擁有 .text 屬性)
+    mock_sentence = MagicMock()
+    mock_sentence.text = "這是一部充滿哲學思維的科幻神作。"
     
-    # 模擬文件層
-    mock_doc = MagicMock()
-    mock_doc.is_error = False
-    mock_doc.summaries = [mock_summary]
+    # 3. 建立符合 Extractive 規範的單個結果物件 (包含 is_error 與 sentences)
+    mock_result = MagicMock()
+    mock_result.is_error = False
+    mock_result.sentences = [mock_sentence]
     
     # 模擬動作層（spec 限制屬性，避免 hasattr 對 summaries 誤判）
     mock_action_result = MagicMock(spec=["is_error", "documents"])
     mock_action_result.is_error = False
     mock_action_result.documents = [mock_doc]
     
-    # 模擬分頁解包（Pages -> ActionResults）
-    mock_page = [mock_action_result]
-    mock_poller.result.return_value = [mock_page]
+    # 🔥 【精準獵殺】直接將微軟 SDK 類別本體的進攻目標更換為最新的 begin_extract_summary
+    monkeypatch.setattr(TextAnalyticsClient, "begin_extract_summary", lambda self, *args, **kwargs: mock_poller)
     
-    # 綁定至客戶端
-    mock_client.begin_analyze_actions.return_value = mock_poller
-    mock_client_class.return_value = mock_client
-    
-    # 執行測試
+    # 5. 執行測試
     result = summarize(["評論1", "評論2"])
     
-    # 驗證結果
+    # 6. 斷言驗證
     assert result == "這是一部充滿哲學思維的科幻神作。"
 
-@patch('app.services.summarizer.TextAnalyticsClient')
-def test_summarize_azure_exception_handling(mock_client_class):
-    """測試當 Azure 網路連線中斷或憑證失效時，是否會丟出帶有特定說明的 RuntimeError"""
-    mock_client = MagicMock()
-    # 模擬連線異常
-    mock_client.begin_analyze_actions.side_effect = Exception("Connection timed out")
-    mock_client_class.return_value = mock_client
+
+def test_summarize_azure_exception_handling(monkeypatch):
+    """測試當萃取式摘要網路連線中斷時，是否能精準激發優雅降級的 RuntimeError"""
+    def mock_begin_extract_summary_raise(self, *args, **kwargs):
+        raise Exception("Connection timed out")
+        
+    # 🔥 同步全域淨化異常測試的攔截點
+    monkeypatch.setattr(TextAnalyticsClient, "begin_extract_summary", mock_begin_extract_summary_raise)
     
-    # 驗證是否拋出規格書要求的優雅降級異常
+    # 驗證後端服務是否確實捕獲異常並重組拋出
     with pytest.raises(RuntimeError) as exc_info:
         summarize(["全面啟動超好看"])
         

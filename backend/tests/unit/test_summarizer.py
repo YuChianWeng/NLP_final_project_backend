@@ -44,3 +44,4 @@ def test_summarize_azure_exception_handling(monkeypatch):
         summarize(["全面啟動超好看"])
         
     assert "Azure Summarizer 服務暫時不可用" in str(exc_info.value)
+    

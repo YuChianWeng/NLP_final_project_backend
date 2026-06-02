@@ -17,9 +17,10 @@ def test_summarize_success_pipeline(monkeypatch):
     mock_result.is_error = False
     mock_result.sentences = [mock_sentence]
     
-    # 4. 根據真實的 begin_extract_summary 規範，poller.result() 回傳的是單層可迭代清單
-    # 這樣能完美對齊 for result in poller.result() 迴圈，絕不噴出 'list' object 錯誤
-    mock_poller.result.return_value = [mock_result]
+    # 模擬動作層（spec 限制屬性，避免 hasattr 對 summaries 誤判）
+    mock_action_result = MagicMock(spec=["is_error", "documents"])
+    mock_action_result.is_error = False
+    mock_action_result.documents = [mock_doc]
     
     # 🔥 【精準獵殺】直接將微軟 SDK 類別本體的進攻目標更換為最新的 begin_extract_summary
     monkeypatch.setattr(TextAnalyticsClient, "begin_extract_summary", lambda self, *args, **kwargs: mock_poller)

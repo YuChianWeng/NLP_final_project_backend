@@ -3,7 +3,8 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from app.schemas.bundle import ResultBundle
-from app.schemas.analysis import AnalysisResult
+
+from app.services.scoring import average_rating
 
 from app.services.extraction import extract_movie_title
 from app.services.repository import find_movie, get_reviews
@@ -115,9 +116,8 @@ def build_movie_insight(
         reviews_with_aspect
     )
 
-    analysis = AnalysisResult(
-        overall_sentiment=overall_sentiment,
-        aspect_sentiments=aspect_sentiments
+    movie_rating = average_rating(
+    reviews
     )
 
     # --------------------------------------------------
@@ -139,7 +139,7 @@ def build_movie_insight(
     except RefinementUnavailable:
         refined_summary = raw_summary
         warnings.append(
-            "summary_refinement_failed"
+            "llm_refinement_unavailable"
         )
 
     # --------------------------------------------------
@@ -161,7 +161,7 @@ def build_movie_insight(
 
     except TtsUnavailable:
         warnings.append(
-            "tts_failed"
+            "tts_unavailable"
         )
 
     # --------------------------------------------------
@@ -172,7 +172,10 @@ def build_movie_insight(
         matched_movie=matched_title,
         analysis=analysis,
         summary_text=refined_summary,
+
         audio_base64=audio_base64,
+
         audio_format=audio_format,
+
         warnings=warnings
     )

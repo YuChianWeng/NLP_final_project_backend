@@ -25,6 +25,7 @@ class MockReview:
     def __init__(self):
         self.text = "很好看"
         self.aspect = "plot"
+        self.rating = 4.0
 
 
 def test_refiner_failure():
@@ -81,7 +82,7 @@ def test_refiner_failure():
     )
 
     assert (
-        "summary_refinement_failed"
+        "llm_refinement_unavailable"
         in result.warnings
     )
 
@@ -139,6 +140,6 @@ def test_tts_failure():
     assert result.audio_format is None
 
     assert (
-        "tts_failed"
+        "tts_unavailable"
         in result.warnings
     )

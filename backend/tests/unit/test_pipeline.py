@@ -16,6 +16,7 @@ class MockReview:
     def __init__(self):
         self.text = "很好看"
         self.aspect = "plot"
+        self.rating = 4.0
 
 
 def test_no_movie_in_message():
@@ -49,7 +50,10 @@ def test_movie_not_found():
         )
 
     assert result.status == "movie_not_found"
-    assert result.matched_movie == "復仇者聯盟"
+    assert (
+    result.matched_movie["canonical_title"]
+    == "復仇者聯盟"
+    )
 
 
 def test_insufficient_data():
@@ -73,7 +77,10 @@ def test_insufficient_data():
         )
 
     assert result.status == "insufficient_data"
-    assert result.matched_movie == movie.canonical_title
+    assert (
+    result.matched_movie["canonical_title"]
+    == movie.canonical_title
+    )
 
 
 def test_ok():
@@ -121,7 +128,11 @@ def test_ok():
         )
 
     assert result.status == "ok"
-    assert result.matched_movie == movie.canonical_title
+    assert (
+    result.matched_movie["canonical_title"]
+    == movie.canonical_title
+    )
+    assert result.movie_rating == 4.0
     assert result.summary_text == "潤飾後摘要"
     assert result.audio_base64 is not None
     assert result.audio_format == "mp3"

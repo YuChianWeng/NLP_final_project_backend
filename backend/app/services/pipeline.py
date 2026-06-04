@@ -3,7 +3,8 @@ import base64
 from sqlalchemy.orm import Session
 
 from app.schemas.bundle import ResultBundle
-from app.schemas.analysis import AnalysisResult
+
+from app.services.scoring import average_rating
 
 from app.services.extraction import extract_movie_title
 from app.services.repository import find_movie, get_reviews
@@ -74,7 +75,9 @@ def build_movie_insight(
     if not movie:
         return ResultBundle(
             status="movie_not_found",
-            matched_movie=title
+            matched_movie={
+                "canonical_title": title
+            }
         )
 
     # --------------------------------------------------
@@ -86,7 +89,10 @@ def build_movie_insight(
     if len(reviews) == 0:
         return ResultBundle(
             status="insufficient_data",
-            matched_movie=movie.canonical_title
+            matched_movie={
+                "id": movie.id,
+                "canonical_title": movie.canonical_title
+            }
         )
 
     # --------------------------------------------------
@@ -118,9 +124,8 @@ def build_movie_insight(
         reviews_with_aspect
     )
 
-    analysis = AnalysisResult(
-        overall_sentiment=overall_sentiment,
-        aspect_sentiments=aspect_sentiments
+    movie_rating = average_rating(
+    reviews
     )
 
     # --------------------------------------------------
@@ -145,7 +150,7 @@ def build_movie_insight(
         refined_summary = raw_summary
 
         warnings.append(
-            "summary_refinement_failed"
+            "llm_refinement_unavailable"
         )
 
     # --------------------------------------------------
@@ -170,7 +175,7 @@ def build_movie_insight(
     except TtsUnavailable:
 
         warnings.append(
-            "tts_failed"
+            "tts_unavailable"
         )
 
     # --------------------------------------------------
@@ -179,10 +184,23 @@ def build_movie_insight(
 
     return ResultBundle(
         status="ok",
-        matched_movie=movie.canonical_title,
-        analysis=analysis,
+
+        matched_movie={
+            "id": movie.id,
+            "canonical_title": movie.canonical_title
+        },
+
+        movie_rating=movie_rating,
+
+        overall_sentiment=overall_sentiment,
+
+        aspect_sentiments=aspect_sentiments,
+
         summary_text=refined_summary,
+
         audio_base64=audio_base64,
+
         audio_format=audio_format,
+
         warnings=warnings
     )

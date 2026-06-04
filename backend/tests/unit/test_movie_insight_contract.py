@@ -11,11 +11,24 @@ def test_movie_insight_contract():
 
     mock_response = {
         "status": "ok",
-        "matched_movie": "復仇者聯盟",
-        "analysis": None,
+
+        "matched_movie": {
+            "id": 1,
+            "canonical_title": "復仇者聯盟"
+        },
+
+        "movie_rating": 4.3,
+
+        "overall_sentiment": None,
+
+        "aspect_sentiments": [],
+
         "summary_text": "潤飾後摘要",
+
         "audio_base64": "ZmFrZV9hdWRpbw==",
+
         "audio_format": "mp3",
+
         "warnings": []
     }
 
@@ -37,7 +50,9 @@ def test_movie_insight_contract():
 
     assert "status" in body
     assert "matched_movie" in body
-    assert "analysis" in body
+    assert "movie_rating" in body
+    assert "overall_sentiment" in body
+    assert "aspect_sentiments" in body
     assert "summary_text" in body
     assert "audio_base64" in body
     assert "audio_format" in body

@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from app.schemas.bundle import ResultBundle
+from app.schemas.analysis import AnalysisResult  # 👈 確保引入情緒包裹模型
 
 from app.services.scoring import average_rating
 
@@ -13,11 +14,12 @@ from app.services.summarizer import summarize
 from app.services.refiner import refine_summary, RefinementUnavailable
 from app.services.tts import synthesize, TtsUnavailable
 
-# 👈 內置一個鴨子型別物件，完美相容爬蟲原始數據與 DB 欄位語法
+# 👈 【修復 1】讓轉接器完美攜帶 rating 屬性，防禦 average_rating 呼叫時發生 AttributeError
 class CrawledReviewAdapter:
-    def __init__(self, text: str, aspect: str):
+    def __init__(self, text: str, aspect: str, rating: float):
         self.text = text
         self.aspect = aspect
+        self.rating = rating
 
 def build_movie_insight(
     message: str,
@@ -68,8 +70,12 @@ def build_movie_insight(
                     raw_text = r.get("text", "")
                     predicted_aspect = classify_aspect(raw_text)  # 自動識別面向
                     
-                    # 轉譯為具備 .text 與 .aspect 屬性的物件，確保後續舊程式完全不用改！
-                    reviews.append(CrawledReviewAdapter(raw_text, predicted_aspect))
+                    # 🛠️ 【修復 2】提取爬蟲原始分數（Metacritic 通常是 0-10 或 0-100），自動縮放到資料庫的 1.0~5.0 區間
+                    raw_rating = float(r.get("rating", 6.0))
+                    mapped_rating = max(1.0, min(5.0, raw_rating / 2.0)) if raw_rating > 5.0 else float(raw_rating)
+                    
+                    # 轉譯為具備 .text、.aspect 與 .rating 屬性的物件，確保後續計算完美通車！
+                    reviews.append(CrawledReviewAdapter(raw_text, predicted_aspect, mapped_rating))
                     
                 # 提示：此處可根據專案需求，調用資料庫寫入函式將新電影與 reviews 永久儲存回 DB 落地
                 warnings.append("data_fetched_from_live_crawler")
@@ -106,7 +112,7 @@ def build_movie_insight(
     ]
 
     # --------------------------------------------------
-    # Step5: 情緒分析
+    # Step5: 情緒分析與評分計算
     # --------------------------------------------------
     overall_sentiment = analyze_overall(
         review_texts
@@ -116,8 +122,15 @@ def build_movie_insight(
         reviews_with_aspect
     )
 
+    # 🛠️ 【修復 3】補回被不小心弄丟的關鍵模型封裝，徹底解決 Step 9 的 NameError 崩潰！
+    analysis = AnalysisResult(
+        overall_sentiment=overall_sentiment,
+        aspect_sentiments=aspect_sentiments
+    )
+
+    # 調用組員寫好的評分服務
     movie_rating = average_rating(
-    reviews
+        reviews
     )
 
     # --------------------------------------------------
@@ -170,12 +183,10 @@ def build_movie_insight(
     return ResultBundle(
         status="ok",
         matched_movie=matched_title,
-        analysis=analysis,
+        rating=movie_rating,  # 👈 🛠️【修復 4】更正欄位名稱指派，對齊接下來更新的完美版合約
+        analysis=analysis,    # 現在分析變數正常存在，絕不踩雷！
         summary_text=refined_summary,
-
         audio_base64=audio_base64,
-
         audio_format=audio_format,
-
         warnings=warnings
     )

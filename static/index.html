@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電影評價分析小幫手</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 電影評價分析小幫手</h1>
+            <p>輸入你想查詢的電影，讀取大數據情感分析與語音總結！</p>
+        </header>
+
+        <div class="search-box">
+            <input type="text" id="movie-input" placeholder="例如：幫我查看看全面啟動這部電影..." value="幫我查看看全面啟動這部電影">
+            <button id="search-btn">開始分析</button>
+        </div>
+
+        <div id="loading" class="loading-container hidden">
+            <div class="spinner"></div>
+            <p>正在努力分析電影評價，請稍候...</p>
+        </div>
+
+        <div id="error-box" class="alert-box hidden">
+            <p id="error-message"></p>
+        </div>
+
+        <div id="result-box" class="result-container hidden">
+            <div class="movie-header">
+                <h2 id="movie-title">電影名稱</h2>
+                <div class="rating-badge">
+                    <span class="rating-num" id="movie-rating">0.0</span>
+                    <span class="rating-max">/ 5.0</span>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <h3>💡 AI 情感總結</h3>
+                <div id="overall-sentiment" class="sentiment-badge">正面 (87%)</div>
+                <p id="summary-text" class="summary-text">這裡會顯示 AI 總結文字...</p>
+                
+                <div id="audio-container" class="audio-container hidden">
+                    <span class="audio-label">🔊 語音總結聆聽：</span>
+                    <audio id="audio-player" controls></audio>
+                </div>
+            </div>
+
+            <div class="aspects-section">
+                <h3>📊 各面向細節評分</h3>
+                <div id="aspects-list" class="aspects-list">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
